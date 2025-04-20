@@ -1,0 +1,88 @@
+/* Top Products Section */
+#topProducts {
+    border-radius: 8px;
+    text-align: center;
+    font-size: 18px;
+}
+
+#topProducts ul {
+    list-style: none;
+    padding: 0;
+}
+
+#topProducts li {
+    background: #ffffff;
+    padding: 20px;
+    margin: 8px 0;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+    transition: transform 0.2s;
+}
+
+#topProducts li:hover {
+    transform: scale(1.05);
+}
+
+/* Error Message */
+#topProducts p {
+    font-weight: bold;
+}
+
+.top {
+    text-align: center;
+}
+
+.chart {
+    width: 100%;
+    max-width: 650px;
+    /* Limits size on larger screens */
+    height: 50%;
+    margin: auto;
+    position: relative;
+}
+
+@media (max-width: 768px) {
+    .chart{
+        height: auto;
+    }
+}
+
+/* Predicted Products Section */
+#predictedProducts {
+    border-radius: 8px;
+    text-align: center;
+    font-size: 18px;
+    margin-top: 20px; /* Space from previous section */
+}
+
+/* List styling */
+#predictedProducts ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Individual product items */
+#predictedProducts li {
+    background: #ffffff;
+    padding: 15px;
+    margin: 10px auto; /* Center align and add spacing */
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+    transition: transform 0.2s;
+    max-width: 500px; /* Keeps the width controlled */
+    text-align: center; /* Ensures text is centered */
+}
+
+/* Hover effect */
+#predictedProducts li:hover {
+    transform: scale(1.02);
+}
+
+/* Error Message */
+#predictedProducts p {
+    font-weight: bold;
+    margin-top: 10px;
+}

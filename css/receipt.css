@@ -1,0 +1,57 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+.receipt {
+    width: 300px;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background: #f2f2f2;
+}
+
+.btn-print {
+    margin-top: 10px;
+}
+
+.back {
+    text-decoration: none;
+    padding: 20px 15px;
+    color: black;
+}
+
+.total-section {
+    margin-top: 10px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.qr-section img {
+    width: 150px;  /* Normal size for screen */
+    height: 150px;
+    display: block;
+    margin: auto;
+}
+
+@media print {
+    .qr-section img {
+        width: 80px;  /* Smaller size when printing */
+        height: 80px;
+    }
+}

@@ -1,0 +1,206 @@
+body {
+  display: flex;
+  justify-content: center;
+}
+
+.addcate {
+  padding: 10px;
+  width: 100%;
+  align-items: center;
+  border: 1;
+  border-collapse: collapse;
+  background-color: #f2f2f2;
+  border-radius: 5px 5px 0 0;
+}
+
+form {
+  width: 100%;
+  padding-bottom: 0px;
+  border-right: 1px solid #f2f2f2;
+  border-left: 1px solid #f2f2f2;
+  border-collapse: collapse;
+}
+
+.form-group {
+  display: flex;
+  align-items: center;
+}
+
+label {
+  width: 200px; /* Adjust as needed */
+  padding: 15px;
+  font-size: 20px;
+}
+
+input{
+  width: 60%;
+  padding: 8px;
+  border: 1px solid hsl(0, 0%, 70%);
+  font-size: 17px;
+  border-radius: 5px;
+  box-shadow: 1px 1px 2px hsl(0, 0%, 80%);
+}
+
+.add-customer {
+  margin-top: 10px;
+  text-align: left;
+}
+
+.add-customers {
+  display: inline-block;
+  padding: 6px 15px;
+  color: black;
+  text-decoration: none;
+  border-radius: 5px;
+  font-size: 14px;
+  border: 1px solid hsl(0, 0%, 70%);
+}
+
+.add-customers:hover {
+  background-color: hsl(0, 0%, 95%);
+}
+
+.form-group .pass{
+  margin-left: 220px;
+}
+input.pass {
+  width: 20px;
+  margin-left: 10px;
+  margin: 0px;
+}
+.passw{
+  font-size: 15px;
+  margin: 0px;
+  padding: 0px;
+  margin-left: 8px;
+}
+
+select{
+  width: 25%;
+  font-size: 15px;
+  padding: 5px;
+  border-radius: 5px;
+  border: 1px solid hsl(0, 0%, 70%);
+}
+
+.bot {
+  background-color: #f2f2f2;
+  align-items: center;
+  border: 1;
+  border-collapse: collapse;
+  border-radius: 0 0 5px 5px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.bot a {
+  padding: 13px;
+  text-decoration: none;
+  color: white;
+  border-radius: 5px;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  width: 10rem;
+}
+
+.sub {
+  background-color:  hsl(122, 42%, 50%);
+  margin: 10px;
+  display: flex;
+  width: 10rem;
+  justify-content: center;
+  padding: 14px;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 18px;
+}
+
+.can {
+  background-color: red;
+  margin: 10px;
+  display: flex;
+}
+
+.exists {
+  color: red;
+  margin-top: 10px;
+  margin-left: 220px;
+}
+
+.add-product-button {
+  text-align: center;
+  padding: 10px;
+}
+.add-product{
+  background-color:  hsl(123, 46%, 50%);
+  width: auto;
+  justify-content: center;
+  padding: 5px;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 14px;
+}
+.add-product:hover {
+  background-color: #45a049;
+}
+
+td input{
+  width: 60%;
+  padding: 8px;
+  border: 1px solid hsl(0, 0%, 70%);
+  font-size: 17px;
+  border-radius: 5px;
+  box-shadow: 1px 1px 2px hsl(0, 0%, 80%);
+  text-align: center;
+}
+td select{
+  width: auto;
+  padding: 8px;
+  border: 1px solid hsl(0, 0%, 70%);
+  font-size: 17px;
+  border-radius: 5px;
+  box-shadow: 1px 1px 2px hsl(0, 0%, 80%);
+}
+
+.label-ssadd{
+  padding: 10px;
+}
+
+.tnumber{
+  padding: 10px;
+}
+
+.recsales{
+  padding: 10px 20px; 
+  background-color: #4CAF50; 
+  color: white; 
+  border: none; 
+  border-radius: 5px; 
+  cursor: pointer;
+}
+
+.cansales{
+  background-color: red;
+  margin: 10px;
+  padding: 10px 20px; 
+  border-radius: 5px; 
+  font-size: 14px;
+  color: white; 
+  text-decoration: none;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+}
+
+table th,
+table td {
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
