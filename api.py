@@ -208,6 +208,163 @@ def generate_qr():
 def serve_qr(filename):
     return send_from_directory('qrcodes', filename)
 
+@app.route('/api/top-products', methods=['GET'])
+def get_top_products():
+    try:
+        conn = get_db_connection(SHOP_DB_CONFIG)
+        cursor = conn.cursor(dictionary=True)
+
+        # Query to get total sold products with their sum of quantities, ensuring no duplicates by grouping by itemName
+        query = """
+            SELECT itemName AS product_name, SUM(quantity) AS total_sold
+            FROM sale
+            GROUP BY itemName
+            ORDER BY total_sold DESC
+            LIMIT 3
+        """
+        
+        cursor.execute(query)
+        top_products = cursor.fetchall()
+
+        # Ensure we don't get duplicate entries (this should already be handled by the query)
+        unique_products = {}
+        for product in top_products:
+            product_name = product['product_name']
+            if product_name in unique_products:
+                unique_products[product_name]['total_sold'] += product['total_sold']
+            else:
+                unique_products[product_name] = product
+
+        cursor.close()
+        conn.close()
+
+        # Convert to a list again after merging duplicates
+        top_products = list(unique_products.values())
+
+        # If no products are found
+        if not top_products:
+            return jsonify({"message": "No products found."}), 404
+
+        return jsonify(top_products)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Get Monthly Sales Data
+@app.route('/api/monthly-sales', methods=['GET'])
+def get_monthly_sales():
+    try:
+        conn = get_db_connection(SHOP_DB_CONFIG)
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+            SELECT DATE_FORMAT(saleDate, '%Y-%m') AS month,
+                   SUM(quantity * unitPrice) AS total_sales
+            FROM sale
+            GROUP BY month
+            ORDER BY month;
+        """
+
+        cursor.execute(query)
+        sales_data = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+        return jsonify(sales_data)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Fetch Sales Data for Prediction
+def fetch_sales_data():
+    conn = get_db_connection(SHOP_DB_CONFIG)
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+        SELECT itemNumber, itemName AS product_name, SUM(quantity) AS total_sold,
+               DATE_FORMAT(saleDate, '%Y-%m') AS month
+        FROM sale
+        GROUP BY itemNumber, month
+        ORDER BY month;
+    """
+    cursor.execute(query)
+    sales_data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return sales_data
+
+def fetch_sales_data():
+    conn = get_db_connection(SHOP_DB_CONFIG)
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+        SELECT itemNumber, itemName AS product_name,
+               SUM(quantity) AS total_sold,
+               DATE_FORMAT(saleDate, '%Y-%m') AS month
+        FROM sale
+        GROUP BY itemNumber, month
+        ORDER BY month;
+    """
+    
+    cursor.execute(query)
+    sales_data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    return sales_data
+
+# Predict top 3 products for the next 3 months
+@app.route('/api/sales-prediction', methods=['GET'])
+def predict_sales():
+    try:
+        sales_data = fetch_sales_data()
+
+        if not sales_data:
+            return jsonify({"error": "No sales data found"}), 404
+
+        df = pd.DataFrame(sales_data)
+
+        # Ensure numeric and clean data
+        df["total_sold"] = pd.to_numeric(df["total_sold"], errors="coerce")
+        df = df.dropna(subset=["total_sold", "month", "itemNumber"])
+        df["month"] = pd.to_datetime(df["month"])
+
+        predictions = {}
+
+        for item in df["itemNumber"].unique():
+            product_sales = df[df["itemNumber"] == item].set_index("month")["total_sold"]
+
+            if len(product_sales) < 1:  # Make sure there's enough data to predict
+                continue
+
+            try:
+                model = SARIMAX(product_sales, order=(1, 1, 1), seasonal_order=(1, 1, 1, 12))
+                results = model.fit(disp=False)
+
+                # Predict next 3 months
+                forecast = results.predict(start=len(product_sales), end=len(product_sales) + 2)
+                predicted_sales = int(forecast.sum())
+
+                predictions[item] = {
+                    "product_name": df[df["itemNumber"] == item]["product_name"].iloc[0],
+                    "predicted_sales": predicted_sales
+                }
+
+            except Exception as e:
+                print(f"Prediction error for item {item}: {e}")
+                continue
+
+        if not predictions:
+            return jsonify({"error": "No predictions were made."}), 404
+
+        # Sort predictions
+        top_3 = sorted(predictions.values(), key=lambda x: x["predicted_sales"], reverse=True)[:3]
+
+        return jsonify(top_3)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # Run the Flask server
 if __name__ == '__main__':
     app.run(debug=True)
