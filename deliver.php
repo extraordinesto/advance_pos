@@ -15,7 +15,7 @@
         font-size: 16px;
     }
 
-    #result{
+    #result {
         font-size: 18px;
         font-weight: bolder;
         color: black;
@@ -25,18 +25,27 @@
         text-align: center;
         margin: 20px 0;
     }
-    .delivered{
+
+    .delivered {
         margin: auto;
     }
     img{
         margin: auto;
     }
-    #deli{
+
+    #qrImage {
+        display: none;
+        width: 200px;
+        height: 200px;
+    }
+
+    #deli {
         font-size: 20px;
         font-weight: bolder;
         color: black;
         padding: 10px;
         text-align: center;
+        display: none;
     }
 </style>
 
@@ -45,8 +54,8 @@
         <button class="scan" onclick="startScan()">Start Scan</button>
         <p id="result">Scan a QR Code to display data here...</p>
         <input type="submit" value="Mark As Delivered" class="delivered" id="deliveredBtn" onclick="generateQRDelivered()" style="display: none;">
-        <img id="qrImage" style="display:none; width:200px; height:200px;" />
-        <p id="deli" style="display: none;">Delivered</p>
+        <img id="qrImage" />
+        <p id="deli">Delivered</p>
     </div>
 </div>
 
@@ -58,8 +67,8 @@
             .then(response => response.json())
             .then(data => {
                 scannedQRData = data.qr_code;
-                document.getElementById("result").innerText = "Transaction Details \n\n" + scannedQRData;
-                document.getElementById("deliveredBtn").style.display = "block"; // Show the button
+                document.getElementById("result").innerText = "Transaction Details\n\n" + scannedQRData;
+                document.getElementById("deliveredBtn").style.display = "block";
             })
             .catch(error => console.error("Error:", error));
     }
@@ -70,26 +79,20 @@
             return;
         }
 
-        // Extract only the first word or first sequence of numbers before a space
         let transactionId = scannedQRData.trim().split(/\s+/)[0];
-
-        console.log("Extracted Transaction ID:", transactionId); // Debugging
+        console.log("Extracted Transaction ID:", transactionId);
 
         fetch("http://127.0.0.1:5000/api/mark-delivered", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    transaction_id: transactionId
-                }) // Send only transaction ID
+                body: JSON.stringify({ transaction_id: transactionId })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     alert("Delivery marked as completed!");
-
-                    // Display the new QR code
                     if (data.qr_code) {
                         document.getElementById("qrImage").src = "data:image/png;base64," + data.qr_code;
                         document.getElementById("qrImage").style.display = "block";
@@ -99,7 +102,7 @@
                     alert("Error: " + data.error);
                 }
 
-                document.getElementById("deliveredBtn").style.display = "none"; // Hide button
+                document.getElementById("deliveredBtn").style.display = "none";
             })
             .catch(error => console.error("Error:", error));
     }

@@ -20,7 +20,7 @@
         <li><a href="./report.php">Report</a></li>
       </ul>
       <ul>
-        <li><a href="./add_product.php">Add Product</a></li>
+        <li><a href="./add_item.php">Add Item</a></li>
       </ul>
       <ul>
         <li><a href="./deliver.php">Deliver</a></li>

@@ -15,6 +15,8 @@ import pymysql
 from flask_cors import cross_origin
 from datetime import datetime
 import traceback
+from io import BytesIO
+import base64
 
 app = Flask(__name__, static_url_path='/qrcodes', static_folder='qrcodes')
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -177,7 +179,7 @@ def generate_qr():
             return jsonify({"error": "Missing required fields"}), 400
 
         # Format QR data
-        qr_data = f"Transaction ID: {transaction_id}\n\nCustomer: {customer_name}\n\nProducts:\n"
+        qr_data = f"{transaction_id}\n\nCustomer: {customer_name}\n\nProducts:\n"
         for p in products:
             product_name = p.get("productName")
             quantity = p.get("quantity")
@@ -208,6 +210,7 @@ def generate_qr():
 def serve_qr(filename):
     return send_from_directory('qrcodes', filename)
 
+# Report
 @app.route('/api/top-products', methods=['GET'])
 def get_top_products():
     try:
@@ -364,6 +367,166 @@ def predict_sales():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+# Database connection to shop_pos
+def get_db1_connection():
+    return pymysql.connect(
+        host='localhost',
+        user='root',
+        password='',
+        db='shop_pos',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
+@app.route('/api/mark-delivered', methods=['POST'])
+def mark_delivered():
+    connection = None
+    try:
+        data = request.json
+        transaction_id = data.get('transaction_id')
+
+        if not transaction_id:
+            return jsonify({"error": "Missing transaction ID"}), 400
+
+        print("Received Transaction ID:", transaction_id)
+
+        connection = get_db1_connection()
+        with connection.cursor() as cursor:
+            # Check if the transaction exists in deliver table
+            cursor.execute("SELECT COUNT(*) AS count FROM deliver WHERE transaction_id = %s", (transaction_id,))
+            result = cursor.fetchone()
+
+            if result['count'] == 0:
+                return jsonify({"error": f"Transaction ID {transaction_id} not found in deliver"}), 404
+
+            # Update status
+            cursor.execute("UPDATE deliver SET status = 'delivered' WHERE transaction_id = %s", (transaction_id,))
+            connection.commit()
+
+            # Get transaction details
+            cursor.execute("SELECT transaction_id, customer_name, transaction_date FROM pos_transaction WHERE transaction_id = %s", (transaction_id,))
+            transaction = cursor.fetchone()
+
+            if not transaction:
+                return jsonify({"error": "Transaction details not found"}), 404
+
+            # Generate new QR code
+            qr_data = f"{transaction['transaction_id']} - Delivered\nCustomer: {transaction['customer_name']}\nDate: {transaction['transaction_date']}"
+            qr = qrcode.make(qr_data)
+            buffer = BytesIO()
+            qr.save(buffer, format="PNG")
+            qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+            return jsonify({
+                "success": f"Delivery for Transaction ID {transaction_id} marked as completed",
+                "qr_code": qr_base64
+            }), 200
+
+    except Exception as e:
+        print("Error in mark_delivered:", str(e))
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if connection:
+            connection.close()
+
+@app.route('/api/scan-qrcode', methods=['GET'])
+def scan_qrcode_from_camera():
+    cap = cv2.VideoCapture(0)
+    print("Scanning for QR code. Press 'q' to quit.")
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            continue
+
+        decoded_objects = decode(frame)
+        data_list = []
+
+        for obj in decoded_objects:
+            qr_data = obj.data.decode('utf-8')
+            qr_type = obj.type
+            data_list.append({"qr_code": qr_data, "type": qr_type})
+
+            # Draw rectangle
+            pts = obj.polygon
+            if len(pts) == 4:
+                pts = [(p.x, p.y) for p in pts]
+                cv2.polylines(frame, [np.array(pts, dtype=np.int32)], True, (0, 255, 0), 2)
+
+        cv2.imshow("QR Code Scanner", frame)
+
+        if data_list:
+            cap.release()
+            cv2.destroyAllWindows()
+            return jsonify(data_list[0])
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+    return jsonify({"error": "No QR code detected"})
+
+@app.route("/api/ims/add_item", methods=["POST"])
+def add_item():
+    try:
+        data = request.json
+        print("Received Data:", data)  # Debugging
+
+        itemNumber = data["itemNumber"]
+        itemName = data["itemName"]
+        discount = data["discount"]
+        stock = data["stock"]
+        unitPrice = data["unitPrice"]
+        status = data["status"]
+        description = data["description"]
+
+        db = get_db_connection(SHOP_DB_CONFIG)
+        cursor = db.cursor()
+
+        insert_query = """INSERT INTO item 
+                          (itemNumber, itemName, discount, stock, unitPrice, status, description) 
+                          VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+        
+        values = (itemNumber, itemName, discount, stock, unitPrice, status, description)
+
+        cursor.execute(insert_query, values)
+        db.commit()
+
+        cursor.close()
+        db.close()
+
+        return jsonify({"message": "Product added successfully!"}), 201
+
+    except Exception as e:
+        print("Error:", str(e))  # Debugging
+        return jsonify({"error": "Failed to add product", "details": str(e)}), 500
+
+# @app.route('/api/ims/display_item', methods=['GET'])
+# def get_item():
+#     conn = get_db_connection(SHOP_DB_CONFIG)
+#     cursor = conn.cursor(dictionary=True)
+#     cursor.execute("""SELECT * FROM ims_product p 
+#                    JOIN ims_category c ON c.categoryid = p.categoryid 
+#                    JOIN ims_brand b ON b.id = p.brandid
+#                    JOIN ims_supplier s ON s.supplier_id = p.supplier
+#                    """)
+#     add_products = cursor.fetchall()
+#     cursor.close()
+#     conn.close()
+#     return jsonify(add_products)
+
+# Endpoint: Fetch all orders from pos_db
+@app.route('/api/pos/orders', methods=['GET'])
+def get_orders():
+    conn = get_db_connection(POS_DB_CONFIG)
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM orders")
+    orders = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(orders)
 
 # Run the Flask server
 if __name__ == '__main__':
